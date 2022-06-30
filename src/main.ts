@@ -6,14 +6,18 @@ type Email = {
   header: string;
   content: string;
   emailAddress: string;
-  img: string;
+  img?: string;
   read: boolean;
 }
 
 
 type State = {
-  emails: Email[];
+  emails: Email[]
+  selectedEmail: Email | null
+  filter: string
 }
+
+
 
 
 const state: State = {
@@ -46,107 +50,201 @@ const state: State = {
       img: 'assets/gov.jpg',
       read: false
     }
-    // feel free to add more emails here
-  ]
+  ],
+
+  selectedEmail: null,
+  filter: ''
+}
+
+function selectEmail (email: Email) {
+  email.read = true
+  state.selectedEmail = email
+}
+
+function deselectEmail () {
+  state.selectedEmail = null
 }
 
 
-function createSingleEmail(email: Email){
-  
-  let oneSection = document.createElement('section')
-  oneSection.className= 'single-email'
-  
-  let bttnEl = document.createElement('button')
-  bttnEl.className = 'single-email__button'
-  bttnEl.innerText = '⬅Back'
-  
-  let divEl = document.createElement('div')
-  divEl.className = 'single-email__sender-section'
-  
-  let imgEl = document.createElement('img')
-  imgEl.className = 'single-email__image'
-  imgEl.src = email.img
-  
-  let spanEl = document.createElement('span')
-  spanEl.className = 'single-email__sender'
-  spanEl.textContent = `${email.from} (${email.emailAddress})`
-  
-  divEl.append(imgEl, spanEl)
-  
-  let h1El = document.createElement('h1')
-  h1El.className = 'single-email__header'
-  h1El.textContent = email.header
-  
-  let pEl = document.createElement('p')
-  pEl.className = 'single-email__content'
-  pEl.textContent = email.content
-  
-  oneSection.append(bttnEl, divEl, h1El, pEl)
+function getFilteredEmails() {
 
-  }
-  
-  function createEmailList(email: Email){
+  return state.emails.filter(
+    email =>
+      email.content.toLowerCase().includes(state.filter.toLowerCase()) ||
+      email.from.toLowerCase().includes(state.filter.toLowerCase()) ||
+      email.header.toLowerCase().includes(state.filter.toLowerCase())
+  )
+}
 
-    let h1El = document.createElement('h1')
-    h1El.textContent = 'Inbox'
-      
-    let ulEl = document.createElement('ul')
-    ulEl.className = 'email-list'
+getFilteredEmails()
 
-      if(email.read === true){
-      let liEl = document.createElement('li')
-      liEl.className = 'email-list__item read'
-  
-      let spanEl = document.createElement('span')
-      spanEl.className = 'emails-list__item__read-icon material-symbols-outlined'
-      spanEl.textContent = 'mark_email_read'
-  
-      let imgEl = document.createElement('img')
-      imgEl.className = 'email-list__item__image'
-      imgEl.src = email.img
-  
-      let pEl1 = document.createElement('p')
-      pEl1.className = 'email-list__item__from'
-      pEl1.textContent = email.from
-  
-      let pEl2 = document.createElement('p')
-      pEl2.className = 'email-list__item__content'
-      pEl2.textContent = email.content
-  
-      liEl.append(spanEl, imgEl, pEl1, pEl2)
-      ulEl.append(liEl)
+
+
+function renderCreateNewEmail(){
+  let mainEl = document.querySelector('main')
+  if (mainEl === null) return
+  mainEl.textContent = ''
+
+  let titleEl = document.createElement('h3')
+  titleEl.textContent = 'Compose Email'
+
+  let formEl = document.createElement('form')
+ 
+  let fromEl = document.createElement('input')
+  fromEl.type = 'email'
+  fromEl.placeholder = 'From'
+
+  let toEl = document.createElement('input')
+  toEl.type = 'email'
+  toEl.placeholder = 'To'
+
+
+  let subjectEl = document.createElement('input')
+  subjectEl.type = 'text'
+ 
+
+  let contentEl = document.createElement('textarea')
+ 
+
+  let submitEl = document.createElement('button')
+  submitEl.type = 'submit'
+  submitEl.textContent = 'Send'
+  submitEl.addEventListener('click', function (event) {
+    event.preventDefault()
+    let toEl = document.querySelector('#to') as HTMLInputElement
+    let subjectEl = document.querySelector('#subject') as HTMLInputElement
+    let bodyEl = document.querySelector('#body') as HTMLInputElement
+
+    let email: Email = {
+      from: fromEl.value,
+      header: subjectEl.value,
+      content: bodyEl.value,
+      emailAddress: toEl.value,
+      read: false
     }
-  
     
-    else{
-      let liEl = document.createElement('li')
-      liEl.className = 'email-list__item'
+    state.emails.push(email)
   
-      let spanEl = document.createElement('span')
-      spanEl.className = 'emails-list__item__read-icon material-symbols-outlined'
-      spanEl.textContent = 'mark_email_unread'
-  
-      let imgEl = document.createElement('img')
-      imgEl.className = 'email-list__item__image'
-      imgEl.src = email.img
-  
-      let pEl1 = document.createElement('p')
-      pEl1.className = 'email-list__item__from'
-      pEl1.textContent = email.from
-  
-      let pEl2 = document.createElement('p')
-      pEl2.className = 'email-list__item__content'
-      pEl2.textContent = email.content
-  
-      liEl.append(spanEl, imgEl, pEl1, pEl2)
-      ulEl.append(liEl)
-    }
-   
+  })
+
+  formEl.append(fromEl, toEl, subjectEl, contentEl, submitEl)
+
+  mainEl.append(titleEl, formEl)
+
+}
+renderCreateNewEmail()
+
+
+  function renderEmailListItem (email: Email, listEl: HTMLUListElement) {
+  let mainEl = document.querySelector('main')
+  if (mainEl === null) return
+  mainEl.textContent = ''
+  let liEl = document.createElement('li')
+  liEl.className = email.read ? 'emails-list__item read' : 'emails-list__item'
+  liEl.addEventListener('click', function () {
+    selectEmail(email)
+    render()
+  })
+
+
+  let readIconEl = document.createElement('span')
+  readIconEl.className =
+    'emails-list__item__read-icon material-symbols-outlined'
+  readIconEl.textContent = email.read ? 'mark_email_read' : 'mark_email_unread'
+
+  let imgEl = document.createElement('img')
+  imgEl.className = 'emails-list__item__image'
+  imgEl.src = 'email.img'
+
+  let fromEl = document.createElement('p')
+  fromEl.classList.add('emails-list__item__from')
+  fromEl.textContent = email.from
+
+  let contentEl = document.createElement('p')
+  contentEl.className = 'emails-list__item__content'
+  contentEl.textContent = email.header
+  liEl.append(readIconEl, imgEl, fromEl, contentEl)
+
+  listEl.appendChild(liEl)
+  mainEl.append(listEl)
+}
+
+function renderEmailList () {
+  let mainEl = document.querySelector('main')
+  if (mainEl === null) return
+  mainEl.textContent = ''
+
+  let titleEl = document.createElement('h1')
+  titleEl.textContent = 'Inbox'
+
+  let listEl = document.createElement('ul')
+  listEl.className = 'emails-list'
+
+  for (let email of state.emails) {
+    renderEmailListItem(email, listEl)
   }
-  
-  function render(){
-    createSingleEmail(state.emails[1])
-    createEmailList(state.emails[1])
+
+  mainEl.append(titleEl, listEl)
+}
+
+function renderEmailDetails () {
+  let mainEl = document.querySelector('main')
+  if (mainEl === null) return
+  if (state.selectedEmail === null) return
+
+  mainEl.textContent = ''
+
+  let backButton = document.createElement('button')
+  backButton.textContent = 'BACK'
+  backButton.addEventListener('click', function () {
+    deselectEmail()
+    render()
+  })
+
+  let titleEl = document.createElement('h1')
+  titleEl.textContent = state.selectedEmail.from
+
+  let imgEl = document.createElement('img')
+  imgEl.className = 'email-details__image'
+  imgEl.src = 'state.selectedEmail.img'
+
+  let headerEl = document.createElement('h2')
+  headerEl.className = 'email-details__header'
+  headerEl.textContent = state.selectedEmail.header
+
+  let contentEl = document.createElement('p')
+  contentEl.className = 'email-details__content'
+  contentEl.textContent = state.selectedEmail.content
+
+  mainEl.append(backButton, titleEl, imgEl, headerEl, contentEl)
+}
+
+function render () {
+  if (state.selectedEmail) renderEmailDetails()
+  else renderEmailList()
+}
+
+function runThisOnlyAtTheStart () {
+  let logoEl = document.querySelector('.logo')
+  if (logoEl) {
+    logoEl.addEventListener('click', function () {
+      deselectEmail()
+      render()
+    })
   }
-  
-  render()
+
+  let inputEl = document.querySelector<HTMLInputElement>('.filter-input')
+  if (inputEl) {
+    inputEl.addEventListener('keydown', function (event) {
+      if (inputEl == null) return
+      if (event.key !== 'Enter') return
+
+      state.filter = inputEl.value
+    })
+  }
+}
+
+window.state = state
+
+runThisOnlyAtTheStart()
+render()
